@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npx --version)",
+      "Bash(npm install *)",
+      "Bash(grep -E \"^\\(prisma|next|tsx\\)$\")",
+      "Bash(powershell -Command \"Test-NetConnection -ComputerName localhost -Port 5432 -InformationLevel Quiet -WarningAction SilentlyContinue\")",
+      "Bash(npx prisma *)",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object LocalPort, OwningProcess, State\")",
+      "Bash(powershell *)",
+      "Bash(npm run *)",
+      "Bash(curl *)",
+      "Bash(npx tsx -e ' *)",
+      "Bash(npx tsx *)"
+    ]
+  }
+}

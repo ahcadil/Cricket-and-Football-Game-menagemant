@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body { height: 100%; }
+  html { -webkit-tap-highlight-color: transparent; }
+  body {
+    @apply bg-pitch-dark text-slate-100 antialiased;
+    background-image:
+      radial-gradient(1400px 700px at 15% -10%, rgba(26,174,114,0.22), transparent 60%),
+      radial-gradient(900px 500px at 92% 0%, rgba(245,197,66,0.12), transparent 60%),
+      radial-gradient(700px 400px at 85% 100%, rgba(63,203,142,0.10), transparent 60%);
+    background-attachment: fixed;
+  }
+  h1, h2, h3 { @apply font-display tracking-wide; }
+
+  input, select, textarea, button { font-size: 16px; }
+  @media (min-width: 768px) {
+    input, select, textarea, button { font-size: 14px; }
+  }
+
+  ::selection { background: rgba(245,197,66,0.35); color: #fff; }
+}
+
+@layer components {
+  .card {
+    @apply relative rounded-2xl bg-gradient-to-br from-white/[0.07] to-white/[0.02]
+           ring-1 ring-white/10 backdrop-blur-sm p-4 sm:p-5 transition;
+  }
+  .input {
+    @apply w-full rounded-lg bg-black/40 ring-1 ring-white/10 px-3 py-2.5 text-base md:text-sm
+           text-slate-100 placeholder:text-slate-500 focus:outline-none
+           focus:ring-2 focus:ring-brand-500 transition;
+  }
+  .label { @apply text-[10px] sm:text-xs uppercase tracking-[0.15em] text-slate-400 mb-1.5 block font-medium; }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm
+           font-medium ring-1 transition disabled:opacity-50 disabled:cursor-not-allowed
+           min-h-[42px] active:scale-[0.98] select-none;
+  }
+  .btn-primary {
+    @apply btn text-pitch-dark ring-brand-400
+           bg-gradient-to-br from-brand-300 to-brand-500;
+  }
+  .btn-gold {
+    @apply btn text-pitch-dark ring-gold-400
+           bg-gradient-to-br from-gold-400 to-gold-600;
+  }
+  .btn-ghost {
+    @apply btn bg-white/[0.03] text-slate-100 ring-white/15;
+  }
+  .btn-danger {
+    @apply btn text-white ring-red-400
+           bg-gradient-to-br from-red-500 to-red-600;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs ring-1 whitespace-nowrap;
+  }
+  .sold-flash { animation: bidFlash 0.8s ease-out; }
+  .tab-strip {
+    @apply flex gap-1 border-b border-white/10 mb-4 overflow-x-auto;
+    scrollbar-width: none;
+  }
+  .tab-strip::-webkit-scrollbar { display: none; }
+
+  .heading-gradient {
+    @apply bg-clip-text text-transparent
+           bg-gradient-to-br from-white via-brand-200 to-gold-400;
+  }
+  .heading-fire {
+    @apply bg-clip-text text-transparent
+           bg-gradient-to-br from-gold-400 via-gold-500 to-orange-500;
+  }
+
+  .live-dot {
+    @apply inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse;
+    box-shadow: 0 0 12px rgba(239,68,68,0.8), 0 0 24px rgba(239,68,68,0.4);
+  }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .shimmer-text {
+    background: linear-gradient(90deg, #cbd5e1 0%, #ffffff 50%, #cbd5e1 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 2.4s linear infinite;
+  }
+
+  /* Raw CSS hover effects — Tailwind @apply can't compile hover:shadow-* for custom shadows */
+  .card-hover {
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 24px 60px -20px rgba(0,0,0,0.55),
+      0 0 0 1px rgba(63,203,142,0.4);
+  }
+
+  .btn-primary:hover {
+    background-image: linear-gradient(135deg, #aef1cf, #3fcb8e);
+    box-shadow: 0 0 36px -8px rgba(63,203,142,0.55);
+  }
+  .btn-gold:hover {
+    background-image: linear-gradient(135deg, #f5c542, #e6b228);
+    box-shadow: 0 0 36px -8px rgba(245,197,66,0.55);
+  }
+  .btn-ghost:hover {
+    background-color: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.3);
+  }
+  .btn-danger:hover {
+    background-image: linear-gradient(135deg, #fb7185, #ef4444);
+    box-shadow: 0 0 36px -8px rgba(239,68,68,0.5);
+  }
+}
+
+@keyframes bidFlash {
+  0%   { transform: scale(1); background-color: rgba(245,197,66,0.45); box-shadow: 0 0 60px rgba(245,197,66,0.6); }
+  100% { transform: scale(1); background-color: transparent; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}

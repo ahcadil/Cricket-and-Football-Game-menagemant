@@ -1,0 +1,219 @@
+// ArenaCast — SQLite variant (enums encoded as String + app-level validators).
+// To switch to Postgres: change provider to "postgresql", restore enum blocks,
+// retype the String fields back to their enum names, then prisma db push.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Allowed string values (mirrors src/lib/enums.ts):
+//   Role:              ADMIN | PLAYER | TEAM_OWNER | VIEWER
+//   Sport:             CRICKET | FOOTBALL
+//   PlayerStatus:      DRAFT | SUBMITTED | APPROVED | REJECTED | ON_AUCTION | SOLD | UNSOLD
+//   CricketRole:       BAT | BOWL | AR | WK
+//   FootballPosition:  GK | DEF | MID | FWD
+//   Foot:              LEFT | RIGHT | BOTH
+//   MatchStatus:       UPCOMING | LIVE | FINISHED | CANCELLED
+//   TossDecision:      BAT | BOWL
+//   WicketType:        BOWLED | CAUGHT | LBW | RUNOUT | STUMPED | HITWICKET
+//   ExtraType:         WIDE | NOBALL | BYE | LEGBYE
+//   FootballEventType: GOAL | OWN_GOAL | YELLOW | RED | SUB_IN | SUB_OUT | PENALTY | MISSED_PEN
+
+model User {
+  id              String          @id @default(cuid())
+  email           String          @unique
+  passwordHash    String
+  name            String
+  role            String          @default("VIEWER")
+  createdAt       DateTime        @default(now())
+  playerProfile   PlayerProfile?
+  ownedTeam       Team?
+  approvedPlayers PlayerProfile[] @relation("ApprovedBy")
+  auctionLogs     AuctionLog[]
+}
+
+model PlayerProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sport           String
+  photoUrl        String?
+  dob             DateTime?
+  city            String?
+  phone           String?
+  experienceYears Int      @default(0)
+  heightCm        Int?
+  weightKg        Int?
+  bio             String?
+
+  // cricket
+  battingStyle    String?
+  bowlingStyle    String?
+  cricketRole     String?
+
+  // football
+  preferredFoot    String?
+  footballPosition String?
+  jerseyNumber     Int?
+
+  status          String   @default("DRAFT")
+  basePrice       Int      @default(0)
+  soldPrice       Int?
+  soldAt          DateTime?
+
+  teamId          String?
+  team            Team?    @relation(fields: [teamId], references: [id])
+
+  approvedById    String?
+  approvedBy      User?    @relation("ApprovedBy", fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+
+  rejectionNote   String?
+  updatedAt       DateTime @updatedAt
+
+  cricketAsBatsman CricketEvent[]  @relation("Batsman")
+  cricketAsBowler  CricketEvent[]  @relation("Bowler")
+  footballEvents   FootballEvent[]
+  motmFor          Match[]         @relation("Motm")
+  auctionLogs      AuctionLog[]
+
+  @@index([status])
+  @@index([sport])
+  @@index([teamId])
+}
+
+model Team {
+  id           String           @id @default(cuid())
+  name         String           @unique
+  logoUrl      String?
+  sport        String
+  ownerId      String           @unique
+  owner        User             @relation(fields: [ownerId], references: [id])
+  budget       Int              @default(1000000)
+  spent        Int              @default(0)
+  primaryColor String           @default("#1aae72")
+  tagline      String?
+  createdAt    DateTime         @default(now())
+
+  players        PlayerProfile[]
+  matchesA       Match[]          @relation("TeamA")
+  matchesB       Match[]          @relation("TeamB")
+  matchesWon     Match[]          @relation("Winner")
+  tossesWon      Match[]          @relation("TossWinner")
+  innings        CricketInnings[]
+  footballEvents FootballEvent[]
+  auctionLogs    AuctionLog[]
+
+  @@index([sport])
+}
+
+model Match {
+  id           String   @id @default(cuid())
+  sport        String
+  teamAId      String
+  teamA        Team     @relation("TeamA", fields: [teamAId], references: [id])
+  teamBId      String
+  teamB        Team     @relation("TeamB", fields: [teamBId], references: [id])
+  scheduledAt  DateTime
+  venue        String?
+  status       String   @default("UPCOMING")
+
+  winnerId     String?
+  winner       Team?    @relation("Winner", fields: [winnerId], references: [id])
+
+  motmId       String?
+  motm         PlayerProfile? @relation("Motm", fields: [motmId], references: [id])
+
+  // cricket-only
+  tossWinnerId String?
+  tossWinner   Team?    @relation("TossWinner", fields: [tossWinnerId], references: [id])
+  tossDecision String?
+  oversPerSide Int?     @default(20)
+
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  innings        CricketInnings[]
+  cricketEvents  CricketEvent[]
+  footballEvents FootballEvent[]
+
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+model CricketInnings {
+  id            String         @id @default(cuid())
+  matchId       String
+  match         Match          @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  battingTeamId String
+  battingTeam   Team           @relation(fields: [battingTeamId], references: [id])
+  order         Int
+  runs          Int            @default(0)
+  wickets       Int            @default(0)
+  ballsBowled   Int            @default(0)
+  extras        Int            @default(0)
+  declared      Boolean        @default(false)
+  closed        Boolean        @default(false)
+  events        CricketEvent[]
+
+  @@unique([matchId, order])
+  @@index([matchId])
+}
+
+model CricketEvent {
+  id         String         @id @default(cuid())
+  matchId    String
+  match      Match          @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  inningsId  String
+  innings    CricketInnings @relation(fields: [inningsId], references: [id], onDelete: Cascade)
+  over       Int
+  ball       Int
+  batsmanId  String?
+  batsman    PlayerProfile? @relation("Batsman", fields: [batsmanId], references: [id])
+  bowlerId   String?
+  bowler     PlayerProfile? @relation("Bowler", fields: [bowlerId], references: [id])
+  runs       Int            @default(0)
+  isWicket   Boolean        @default(false)
+  wicketType String?
+  extraType  String?
+  note       String?
+  createdAt  DateTime       @default(now())
+
+  @@index([matchId])
+  @@index([inningsId])
+}
+
+model FootballEvent {
+  id        String         @id @default(cuid())
+  matchId   String
+  match     Match          @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  minute    Int
+  teamId    String
+  team      Team           @relation(fields: [teamId], references: [id])
+  playerId  String?
+  player    PlayerProfile? @relation(fields: [playerId], references: [id])
+  type      String
+  note      String?
+  createdAt DateTime       @default(now())
+
+  @@index([matchId])
+}
+
+model AuctionLog {
+  id        String        @id @default(cuid())
+  playerId  String
+  player    PlayerProfile @relation(fields: [playerId], references: [id])
+  teamId    String
+  team      Team          @relation(fields: [teamId], references: [id])
+  soldPrice Int
+  soldAt    DateTime      @default(now())
+  adminId   String
+  admin     User          @relation(fields: [adminId], references: [id])
+
+  @@index([soldAt])
+}
