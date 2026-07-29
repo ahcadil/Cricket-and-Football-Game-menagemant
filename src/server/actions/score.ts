@@ -134,13 +134,16 @@ export async function deleteCricketEventAction(formData: FormData) {
   if (!innings) return;
 
   const legalBall = !event.extraType || event.extraType === "BYE" || event.extraType === "LEGBYE";
+  const runDeduction = event.runs + (event.extraType === "WIDE" || event.extraType === "NOBALL" ? 1 : 0);
+  const extraDeduction = event.extraType === "WIDE" || event.extraType === "NOBALL" ? 1 : 0;
+
   await prisma.cricketInnings.update({
     where: { id: innings.id },
     data: {
-      runs: { decrement: event.runs + (event.extraType === "WIDE" || event.extraType === "NOBALL" ? 1 : 0) },
-      wickets: { decrement: event.isWicket ? 1 : 0 },
-      ballsBowled: { decrement: legalBall ? 1 : 0 },
-      extras: { decrement: event.extraType === "WIDE" || event.extraType === "NOBALL" ? 1 : 0 },
+      runs: Math.max(0, innings.runs - runDeduction),
+      wickets: Math.max(0, innings.wickets - (event.isWicket ? 1 : 0)),
+      ballsBowled: Math.max(0, innings.ballsBowled - (legalBall ? 1 : 0)),
+      extras: Math.max(0, innings.extras - extraDeduction),
     },
   });
   await prisma.cricketEvent.delete({ where: { id } });

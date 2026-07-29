@@ -158,8 +158,10 @@ export async function deleteTeamAction(_prev: ActionState, formData: FormData): 
         where: { teamId: id },
         data: { teamId: null, status: "APPROVED", soldPrice: null, soldAt: null },
       }),
-      // Cascade audit logs explicitly (Prisma schema has no automatic cascade here)
+      // Cascade audit logs, innings, and events explicitly
       prisma.auctionLog.deleteMany({ where: { teamId: id } }),
+      prisma.cricketInnings.deleteMany({ where: { battingTeamId: id } }),
+      prisma.footballEvent.deleteMany({ where: { teamId: id } }),
       prisma.team.delete({ where: { id } }),
     ]);
 

@@ -144,12 +144,20 @@ export async function updatePlayerAdminAction(_prev: ActionState, formData: Form
       }
     }
 
-    await prisma.$transaction([
-      prisma.user.update({
+    await prisma.$transaction(async (tx) => {
+      if (status === "ON_AUCTION") {
+        await tx.playerProfile.updateMany({
+          where: { status: "ON_AUCTION", id: { not: id } },
+          data: { status: "APPROVED", soldPrice: null, teamId: null },
+        });
+      }
+
+      await tx.user.update({
         where: { id: player.userId },
         data: { name, email: emailStr },
-      }),
-      prisma.playerProfile.update({
+      });
+
+      await tx.playerProfile.update({
         where: { id },
         data: {
           sport,
@@ -170,8 +178,8 @@ export async function updatePlayerAdminAction(_prev: ActionState, formData: Form
           heightCm,
           weightKg,
         },
-      }),
-    ]);
+      });
+    });
 
     if (status === "ON_AUCTION") {
       publish("auction", {
@@ -205,6 +213,8 @@ export async function clearAllPlayersAction(_prev: ActionState, formData: FormDa
     if (count === 0) throw new Error("There are no player profiles to delete.");
 
     await prisma.$transaction([
+      prisma.match.updateMany({ data: { motmId: null } }),
+      prisma.team.updateMany({ data: { spent: 0 } }),
       prisma.auctionLog.deleteMany({}),
       prisma.cricketEvent.deleteMany({}),
       prisma.footballEvent.deleteMany({}),
