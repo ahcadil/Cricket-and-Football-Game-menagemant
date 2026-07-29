@@ -5,7 +5,7 @@ import { Field, Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { bulkImportPlayersAction, type BulkImportResult } from "@/server/actions/bulkPlayer";
 import { parsePlayers, CSV_TEMPLATE, MAX_ROWS, TEMPLATE_HEADERS } from "@/lib/bulkPlayers";
-import { formatMoney } from "@/lib/validators";
+import { formatM } from "@/lib/validators";
 
 export function BulkPlayerImport() {
   const [open, setOpen] = useState(false);
@@ -146,10 +146,19 @@ function PreviewBlock({ preview }: { preview: ReturnType<typeof parsePlayers> })
       <div className="max-h-44 overflow-y-auto divide-y divide-white/5 text-xs">
         {preview.rows.slice(0, 50).map((r) => (
           <div key={r.line} className="flex items-center gap-2 px-3 py-1.5">
-            <span className="w-5 text-center">{r.sport === "CRICKET" ? "🏏" : "⚽"}</span>
+            <span className="w-5 text-center shrink-0">{r.sport === "CRICKET" ? "🏏" : "⚽"}</span>
+            {r.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={r.photoUrl} alt={r.name} className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-gold-400" />
+            ) : (
+              <span className="w-6 h-6 rounded-full bg-black/40 text-[10px] font-bold flex items-center justify-center shrink-0 text-slate-300">
+                {r.name.slice(0, 1)}
+              </span>
+            )}
             <span className="flex-1 min-w-0 truncate text-slate-200">{r.name}</span>
+            {r.photoUrl && <span className="text-[10px] text-brand-300 font-semibold shrink-0">🖼️ Image</span>}
             <span className="text-slate-500 truncate hidden sm:inline">{r.role ?? "—"}</span>
-            <span className="text-gold-400 whitespace-nowrap">{formatMoney(r.basePrice)}</span>
+            <span className="text-gold-400 whitespace-nowrap font-semibold">{formatM(r.basePrice)}</span>
           </div>
         ))}
         {preview.errors.slice(0, 50).map((e) => (

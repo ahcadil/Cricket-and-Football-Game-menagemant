@@ -1,6 +1,6 @@
 // Pure, framework-agnostic parser for bulk player import.
 // Accepts CSV (comma) or Excel-paste (tab) text, RFC-4180-ish quote handling.
-// No DB / server imports here so it can also power a live client-side preview.
+// Supports Google Drive links (automatically converted to direct image embed URLs).
 
 export type Sport = "CRICKET" | "FOOTBALL";
 
@@ -15,6 +15,8 @@ export interface ParsedPlayer {
   experienceYears: number;
   phone: string | null;
   bio: string | null;
+  photoUrl: string | null;   // Converted Google Drive URL or direct image URL
+  session: string | null;    // e.g. "23-24", "24-25", "25-26", "22-23"
 }
 
 export interface RowError { line: number; name: string; reason: string }
@@ -30,18 +32,43 @@ export interface ParseResult {
 export const MAX_ROWS = 500;
 
 export const TEMPLATE_HEADERS = [
-  "name", "sport", "email", "city", "role", "basePrice", "experienceYears", "phone", "bio",
+  "name", "sport", "email", "city", "role", "basePrice", "experienceYears", "session", "phone", "bio", "photoUrl",
 ] as const;
 
 export const CSV_TEMPLATE =
   TEMPLATE_HEADERS.join(",") + "\n" +
   [
-    "Virat Kohli,CRICKET,,Delhi,BAT,900000,12,,Aggressive top-order batter",
-    "Jasprit Bumrah,CRICKET,jasprit@example.com,Ahmedabad,BOWL,800000,9,,Yorker specialist",
-    "Ravindra Jadeja,CRICKET,,Rajkot,AR,650000,11,,Left-arm spin all-rounder",
-    "Lionel Messi,FOOTBALL,,Rosario,FWD,1500000,20,,Playmaker & finisher",
-    "Virgil van Dijk,FOOTBALL,,Breda,DEF,1100000,13,,Commanding centre-back",
+    "Virat Kohli,CRICKET,,Delhi,BAT,50M,12,24-25,,Top-order batter,https://drive.google.com/open?id=1op-ECnlhkxQSfazdo5WRXgyIS7m2kW1C",
+    "Jasprit Bumrah,CRICKET,jasprit@example.com,Ahmedabad,BOWL,50M,9,24-25,,Yorker specialist,",
+    "Ravindra Jadeja,CRICKET,,Rajkot,AR,50M,11,23-24,,Left-arm spin all-rounder,",
+    "Lionel Messi,FOOTBALL,,Rosario,FWD,100M,20,24-25,,Playmaker & finisher,",
+    "Virgil van Dijk,FOOTBALL,,Breda,DEF,50M,13,23-24,,Commanding centre-back,",
   ].join("\n") + "\n";
+
+/** Convert Google Drive links into high-speed direct CDN image embed URLs */
+export function convertGoogleDriveUrl(url: string | null | undefined): string | null {
+  if (!url || !url.trim()) return null;
+  const trimmed = url.trim();
+
+  // Pattern 1: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+  const fileDMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileDMatch && fileDMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${fileDMatch[1]}`;
+  }
+
+  // Pattern 2: https://drive.google.com/open?id=FILE_ID or /uc?id=FILE_ID or ?id=FILE_ID
+  const idMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (idMatch && idMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${idMatch[1]}`;
+  }
+
+  // Direct image URL or local relative path
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/")) {
+    return trimmed;
+  }
+
+  return trimmed;
+}
 
 // ── header synonyms → canonical key ───────────────────────────────────────
 const HEADER_ALIASES: Record<string, string> = {
@@ -52,8 +79,10 @@ const HEADER_ALIASES: Record<string, string> = {
   role: "role", position: "role", pos: "role", cricketrole: "role", footballposition: "role",
   baseprice: "basePrice", base: "basePrice", price: "basePrice",
   experienceyears: "experienceYears", experience: "experienceYears", exp: "experienceYears", years: "experienceYears",
+  session: "session", season: "session", year: "session", playersession: "session",
   phone: "phone", mobile: "phone", contact: "phone",
   bio: "bio", about: "bio", notes: "bio", description: "bio",
+  photourl: "photoUrl", photo: "photoUrl", image: "photoUrl", img: "photoUrl", drive: "photoUrl", drivelink: "photoUrl", picture: "photoUrl", avatar: "photoUrl",
 };
 
 const CRICKET_ROLES: Record<string, string> = {
@@ -200,6 +229,10 @@ export function parsePlayers(text: string): ParseResult {
       experienceYears = n;
     }
 
+    const photoRaw = cell(r, "photoUrl");
+    const photoUrl = convertGoogleDriveUrl(photoRaw);
+    const session = cell(r, "session") || null;
+
     rows.push({
       line, name, sport, email,
       city: cell(r, "city") || null,
@@ -208,6 +241,8 @@ export function parsePlayers(text: string): ParseResult {
       experienceYears,
       phone: cell(r, "phone") || null,
       bio: (cell(r, "bio") || null)?.slice(0, 500) ?? null,
+      photoUrl,
+      session,
     });
   }
 

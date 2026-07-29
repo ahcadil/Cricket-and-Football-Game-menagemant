@@ -50,6 +50,7 @@ model PlayerProfile {
   heightCm        Int?
   weightKg        Int?
   bio             String?
+  session         String?  // e.g. "23-24", "24-25", "25-26", "22-23", "21-22"
 
   // cricket
   battingStyle    String?
@@ -62,8 +63,8 @@ model PlayerProfile {
   jerseyNumber     Int?
 
   status          String   @default("DRAFT")
-  basePrice       Int      @default(0)
-  soldPrice       Int?
+  basePrice       BigInt   @default(0)
+  soldPrice       BigInt?
   soldAt          DateTime?
 
   teamId          String?
@@ -84,6 +85,7 @@ model PlayerProfile {
 
   @@index([status])
   @@index([sport])
+  @@index([status, sport])
   @@index([teamId])
 }
 
@@ -94,8 +96,8 @@ model Team {
   sport        String
   ownerId      String           @unique
   owner        User             @relation(fields: [ownerId], references: [id])
-  budget       Int              @default(1000000)
-  spent        Int              @default(0)
+  budget       BigInt           @default(1000000)
+  spent        BigInt           @default(0)
   primaryColor String           @default("#1aae72")
   tagline      String?
   createdAt    DateTime         @default(now())
@@ -210,7 +212,7 @@ model AuctionLog {
   player    PlayerProfile @relation(fields: [playerId], references: [id])
   teamId    String
   team      Team          @relation(fields: [teamId], references: [id])
-  soldPrice Int
+  soldPrice BigInt
   soldAt    DateTime      @default(now())
   adminId   String
   admin     User          @relation(fields: [adminId], references: [id])

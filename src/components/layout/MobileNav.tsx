@@ -28,7 +28,7 @@ export function MobileNav({ user }: Props) {
     <>
       <button
         onClick={() => setOpen(o => !o)}
-        className="md:hidden inline-flex items-center justify-center w-11 h-11 -mr-2 text-slate-200 rounded-lg hover:bg-white/5"
+        className="lg:hidden inline-flex items-center justify-center w-11 h-11 -mr-2 text-slate-200 rounded-lg hover:bg-white/5"
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
       >
@@ -44,12 +44,12 @@ export function MobileNav({ user }: Props) {
       {open && (
         <>
           <div
-            className="md:hidden fixed inset-0 top-16 z-40 bg-black/60 backdrop-blur-sm"
+            className="lg:hidden fixed inset-0 top-16 z-40 bg-black/60 backdrop-blur-sm"
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
           <nav
-            className="md:hidden fixed inset-x-0 top-16 z-50 bg-pitch-dark border-b border-white/10 shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto"
+            className="lg:hidden fixed inset-x-0 top-16 z-50 bg-pitch-dark border-b border-white/10 shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto"
             role="navigation"
           >
             <div className="px-4 py-4 space-y-1">

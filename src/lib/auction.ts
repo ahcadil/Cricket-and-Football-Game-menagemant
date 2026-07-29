@@ -10,7 +10,7 @@ export const SQUAD_SIZE = 11;
 
 // Floor reserved for each still-empty squad slot, so the squad can always be
 // completed. Kept as a single knob — tune here if the squad economics change.
-export const MIN_PLAYER_PRICE = 100_000; // ₹0.1M
+export const MIN_PLAYER_PRICE = 50_000_000; // ₹50M minimum reserve per remaining slot
 
 export interface BudgetView {
   budget: number;      // total purse
@@ -23,12 +23,14 @@ export interface BudgetView {
   maxBid: number;      // most spendable on the NEXT player while still filling the squad
 }
 
-export function budgetView(t: { budget: number; spent: number; squadCount: number }): BudgetView {
-  const remaining = t.budget - t.spent;
+export function budgetView(t: { budget: number | bigint; spent: number | bigint; squadCount: number }): BudgetView {
+  const budget = Number(t.budget);
+  const spent = Number(t.spent);
+  const remaining = budget - spent;
   const slotsLeft = Math.max(0, SQUAD_SIZE - t.squadCount);
   const full = slotsLeft <= 0;
   const perPlayer = slotsLeft > 0 ? Math.floor(remaining / slotsLeft) : 0;
   // reserve MIN_PLAYER_PRICE for every OTHER unfilled slot
   const maxBid = slotsLeft > 0 ? Math.max(0, remaining - (slotsLeft - 1) * MIN_PLAYER_PRICE) : 0;
-  return { budget: t.budget, spent: t.spent, remaining, squadCount: t.squadCount, slotsLeft, full, perPlayer, maxBid };
+  return { budget, spent, remaining, squadCount: t.squadCount, slotsLeft, full, perPlayer, maxBid };
 }

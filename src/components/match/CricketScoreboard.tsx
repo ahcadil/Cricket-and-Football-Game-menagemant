@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 
 interface Innings {
@@ -23,24 +24,33 @@ function fmtOvers(balls: number) {
 }
 
 export function CricketScoreboard({ match, innings, events }: Props) {
-  const [bump, setBump] = useState(0);
+  const router = useRouter();
+  const [flash, setFlash] = useState(false);
+
+  // Live updates: an SSE tick triggers a soft server refresh (re-runs the RSC
+  // and streams fresh props) — no full-page reload, no flicker, scroll kept.
   useEffect(() => {
     if (match.status !== "LIVE") return;
     const es = new EventSource(`/api/matches/${match.id}/stream`);
-    es.onmessage = () => setBump(b => b + 1);
+    es.onmessage = () => {
+      setFlash(true);
+      setTimeout(() => setFlash(false), 700);
+      router.refresh();
+    };
     return () => es.close();
-  }, [match.id, match.status]);
-
-  // bump is unused visually but forces server-component refresh via parent if you want full refresh
-  // here we just rely on the server-rendered values + revalidatePath. For a smoother UX we'd
-  // mutate local state — for MVP a quick window.location.reload-style is fine.
-  useEffect(() => { if (bump > 0) window.location.reload(); }, [bump]);
+  }, [match.id, match.status, router]);
 
   const teamFor = (id: string) => (id === match.teamA.id ? match.teamA : match.teamB);
   const last6 = events.slice(-6).reverse();
 
   return (
     <div className="space-y-4">
+      {match.status === "LIVE" && (
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <span className="live-dot" /> Live
+          <span className={`transition-opacity duration-300 ${flash ? "opacity-100 text-brand-300" : "opacity-0"}`}>· updated</span>
+        </div>
+      )}
       {innings.map(inn => {
         const team = teamFor(inn.battingTeamId);
         const overs = fmtOvers(inn.ballsBowled);

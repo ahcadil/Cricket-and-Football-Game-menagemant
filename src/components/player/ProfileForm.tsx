@@ -4,6 +4,7 @@ import { Field, Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { Avatar } from "@/components/ui/Avatar";
 import { saveProfileAction } from "@/server/actions/player";
 import type { PlayerProfile } from "@prisma/client";
 
@@ -12,7 +13,28 @@ interface Props { profile: PlayerProfile | null }
 export function ProfileForm({ profile }: Props) {
   const [sport, setSport] = useState<"CRICKET" | "FOOTBALL">((profile?.sport as "CRICKET" | "FOOTBALL") ?? "CRICKET");
   const [busy, setBusy] = useState<"draft" | "submit" | null>(null);
+  const [photoUrl, setPhotoUrl] = useState(profile?.photoUrl ?? "");
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
   const locked = profile?.status === "APPROVED" || profile?.status === "ON_AUCTION" || profile?.status === "SOLD";
+
+  const onPhoto = async (file: File | null) => {
+    if (!file) return;
+    setUploadErr(null);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "upload failed");
+      setPhotoUrl(json.url);
+    } catch (e) {
+      setUploadErr(e instanceof Error ? e.message : "upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <form
@@ -47,10 +69,38 @@ export function ProfileForm({ profile }: Props) {
       <div className="grid md:grid-cols-3 gap-4">
         <Field label="Height (cm)"><Input type="number" name="heightCm" min={100} max={250} defaultValue={profile?.heightCm ?? ""} /></Field>
         <Field label="Weight (kg)"><Input type="number" name="weightKg" min={30} max={200} defaultValue={profile?.weightKg ?? ""} /></Field>
-        <Field label="Photo URL" hint="Paste a public image URL">
-          <Input name="photoUrl" defaultValue={profile?.photoUrl ?? ""} placeholder="https://…" />
-        </Field>
       </div>
+
+      {/* PHOTO */}
+      <Field label="Photo" hint="Upload an image (≤5MB) or paste a public URL">
+        {/* submitted value — populated by upload OR the URL box below */}
+        <input type="hidden" name="photoUrl" value={photoUrl} />
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Avatar name={profile ? "You" : "?"} src={photoUrl || null} size={64} className="shrink-0 ring-1 ring-white/10" />
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className={`btn-ghost text-xs cursor-pointer ${locked ? "opacity-50 pointer-events-none" : ""}`}>
+                {uploading ? "Uploading…" : "📷 Upload photo"}
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden"
+                  disabled={locked || uploading}
+                  onChange={(e) => onPhoto(e.target.files?.[0] ?? null)} />
+              </label>
+              {photoUrl && !locked && (
+                <button type="button" onClick={() => setPhotoUrl("")} className="text-xs text-slate-400 hover:text-white">remove</button>
+              )}
+            </div>
+            <Input
+              aria-label="Photo URL"
+              value={photoUrl}
+              onChange={(e) => setPhotoUrl(e.target.value)}
+              placeholder="…or paste https://image-url"
+              disabled={locked}
+              className="text-xs"
+            />
+            {uploadErr && <p className="text-xs text-red-400">⚠️ {uploadErr}</p>}
+          </div>
+        </div>
+      </Field>
 
       {sport === "CRICKET" ? (
         <div className="grid md:grid-cols-3 gap-4">

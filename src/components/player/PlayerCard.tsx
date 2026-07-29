@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { StatusBadge } from "./StatusBadge";
-import { formatMoney, tierFromBasePrice } from "@/lib/validators";
+import { formatM, tierFromBasePrice } from "@/lib/validators";
 import type { PlayerProfile, User, Team } from "@prisma/client";
 
 type Full = PlayerProfile & { user: Pick<User, "name">; team?: Pick<Team, "name"> | null };
@@ -41,7 +41,8 @@ export function PlayerCard({ p, href, showStatus = false }: { p: Full; href?: st
             {role ?? "—"} · {p.city ?? "—"}
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {p.basePrice > 0 && <Badge tone="gold">{formatMoney(p.basePrice)}</Badge>}
+            {p.basePrice > 0 && <Badge tone="gold">{formatM(p.basePrice)}</Badge>}
+            {p.session && <Badge tone="neutral">Session {p.session}</Badge>}
             {showStatus && <StatusBadge status={p.status as any} />}
             {p.team && <Badge tone="brand">{p.team.name}</Badge>}
           </div>

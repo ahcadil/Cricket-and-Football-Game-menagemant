@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? "dev-secret-change-me-32chars-minimum-please-please"
-);
+const RAW_SECRET = process.env.JWT_SECRET;
+if (!RAW_SECRET || RAW_SECRET.length < 32) {
+  throw new Error("JWT_SECRET is missing or too short (need ≥32 chars). Set it in .env.");
+}
+const SECRET = new TextEncoder().encode(RAW_SECRET);
 const COOKIE_NAME = "arenacast_session";
 
 async function readSession(req: NextRequest) {

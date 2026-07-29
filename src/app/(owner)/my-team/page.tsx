@@ -41,7 +41,7 @@ export default async function MyTeamPage() {
           </div>
           <div className="w-full md:w-80">
             <p className="label">Auction Budget</p>
-            <BudgetBar budget={team.budget} spent={team.spent} />
+            <BudgetBar budget={team.budget} spent={team.spent} squadCount={team.players.length} />
           </div>
         </div>
       </header>

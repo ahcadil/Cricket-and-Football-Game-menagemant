@@ -5,7 +5,16 @@ import { getSession } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
-const ALLOWED = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+// Map validated MIME → safe extension. We derive the extension from the
+// server-checked content type, NOT from the client-supplied file.name, so an
+// attacker can't smuggle a .html/.svg onto our same-origin /uploads path.
+const MIME_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+const ALLOWED = Object.keys(MIME_EXT);
 
 function rid(len = 16) {
   const alpha = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -25,7 +34,7 @@ export async function POST(req: Request) {
 
   const dir = path.join(process.cwd(), "public", "uploads");
   await fs.mkdir(dir, { recursive: true });
-  const ext = file.name.includes(".") ? file.name.split(".").pop()!.toLowerCase() : "png";
+  const ext = MIME_EXT[file.type];
   const filename = `${rid()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
   await fs.writeFile(path.join(dir, filename), buffer);

@@ -1,19 +1,21 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
-import { formatMoney } from "@/lib/validators";
+import { formatM } from "@/lib/validators";
 
 interface Props {
   team: {
     id: string; name: string; sport: string;
-    primaryColor: string; tagline?: string | null; budget: number; spent: number;
+    primaryColor: string; tagline?: string | null; budget: number | bigint; spent: number | bigint;
     logoUrl?: string | null;
     _count?: { players: number };
   };
 }
 
 export function TeamCard({ team }: Props) {
-  const remaining = team.budget - team.spent;
-  const pct = team.budget > 0 ? Math.min(100, Math.round((team.spent / team.budget) * 100)) : 0;
+  const budget = Number(team.budget);
+  const spent = Number(team.spent);
+  const remaining = budget - spent;
+  const pct = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
   return (
     <Link
       href={`/teams/${team.id}`}
@@ -54,16 +56,16 @@ export function TeamCard({ team }: Props) {
         )}
 
         <div className="mt-4">
-          <div className="flex justify-between text-[10px] uppercase tracking-wider text-slate-400 mb-1">
-            <span>Spent</span>
-            <span>Budget</span>
+          <div className="flex justify-between text-[10px] uppercase tracking-wider text-slate-400 mb-1 font-medium">
+            <span>Spent ({formatM(team.spent)})</span>
+            <span>Budget ({formatM(team.budget)})</span>
           </div>
-          <div className="h-1.5 rounded-full bg-black/40 overflow-hidden">
+          <div className="h-2 rounded-full bg-black/40 overflow-hidden ring-1 ring-white/5">
             <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: team.primaryColor }} />
           </div>
-          <div className="mt-2 flex justify-between text-xs">
-            <span className="text-slate-300">{formatMoney(team.spent)}</span>
-            <span className="text-brand-300">{formatMoney(remaining)} left</span>
+          <div className="mt-2 flex justify-between text-xs font-medium">
+            <span className="text-slate-300">{formatM(team.spent)} spent</span>
+            <span className="text-brand-300">{formatM(remaining)} left</span>
           </div>
         </div>
       </div>

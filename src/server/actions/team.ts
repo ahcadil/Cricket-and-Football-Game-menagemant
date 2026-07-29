@@ -2,8 +2,9 @@
 import { prisma } from "@/lib/db";
 import { getSession, hashPassword } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { str, optStr, int, enumVal, email } from "@/lib/validators";
+import { str, optStr, int, enumVal, email, formatM } from "@/lib/validators";
 import { safeAction, type ActionState } from "@/lib/action";
+import { convertGoogleDriveUrl } from "@/lib/bulkPlayers";
 
 const SPORTS = ["CRICKET", "FOOTBALL"] as const;
 
@@ -79,13 +80,26 @@ export async function updateTeamAction(_prev: ActionState, formData: FormData): 
     await adminGuard();
     const id = str(formData.get("id"), { required: true });
     const name = str(formData.get("name"), { required: true, min: 2, max: 60 });
+    const sport = enumVal(formData.get("sport"), SPORTS, false) ?? "CRICKET";
     const budget = int(formData.get("budget"), { required: true, min: 0 })!;
+    const primaryColor = optStr(formData.get("primaryColor")) ?? "#1aae72";
+    const tagline = optStr(formData.get("tagline"));
+    const rawLogoUrl = optStr(formData.get("logoUrl"));
+    const logoUrl = rawLogoUrl ? convertGoogleDriveUrl(rawLogoUrl) : null;
 
-    const team = await prisma.team.findUnique({ where: { id } });
+    const ownerName = optStr(formData.get("ownerName"));
+    const ownerEmail = optStr(formData.get("ownerEmail"));
+
+    const team = await prisma.team.findUnique({
+      where: { id },
+      include: { owner: true }
+    });
     if (!team) throw new Error("Team not found");
 
-    if (budget < team.spent) {
-      throw new Error(`Budget can't be less than already-spent ₹${team.spent.toLocaleString()}`);
+    const numBudget = Number(budget);
+    const numSpent = Number(team.spent);
+    if (numBudget < numSpent) {
+      throw new Error(`Budget can't be less than already-spent $${numSpent.toLocaleString()}`);
     }
 
     if (name !== team.name) {
@@ -93,12 +107,33 @@ export async function updateTeamAction(_prev: ActionState, formData: FormData): 
       if (dup) throw new Error(`Team name "${name}" is already taken`);
     }
 
+    // Update team attributes
     await prisma.team.update({
       where: { id },
-      data: { name, budget },
+      data: { name, sport, budget, primaryColor, tagline, logoUrl },
     });
 
+    // Update owner info if provided
+    if (team.ownerId && (ownerName || ownerEmail)) {
+      const updateData: { name?: string; email?: string } = {};
+      if (ownerName && ownerName !== team.owner.name) updateData.name = ownerName;
+      if (ownerEmail && ownerEmail !== team.owner.email) {
+        const dupEmail = await prisma.user.findUnique({ where: { email: ownerEmail } });
+        if (dupEmail && dupEmail.id !== team.ownerId) {
+          throw new Error(`Email "${ownerEmail}" is already taken by another user`);
+        }
+        updateData.email = ownerEmail;
+      }
+      if (Object.keys(updateData).length > 0) {
+        await prisma.user.update({
+          where: { id: team.ownerId },
+          data: updateData,
+        });
+      }
+    }
+
     revalidatePath("/admin/teams");
+    revalidatePath("/admin/auction");
     revalidatePath("/teams");
     revalidatePath(`/teams/${id}`);
     revalidatePath("/my-team");
@@ -130,5 +165,32 @@ export async function deleteTeamAction(_prev: ActionState, formData: FormData): 
 
     revalidatePath("/admin/teams");
     revalidatePath("/teams");
+  });
+}
+
+export async function bulkUpdateBudgetAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  return safeAction(async () => {
+    await adminGuard();
+    const budget = int(formData.get("budget"), { required: true, min: 0 })!;
+
+    const invalidTeam = await prisma.team.findFirst({
+      where: { spent: { gt: budget } },
+      select: { name: true, spent: true },
+    });
+
+    if (invalidTeam) {
+      throw new Error(`Cannot set budget lower than ${invalidTeam.name}'s spent amount (${formatM(invalidTeam.spent)}).`);
+    }
+
+    const result = await prisma.team.updateMany({
+      data: { budget },
+    });
+
+    revalidatePath("/admin/teams");
+    revalidatePath("/teams");
+    revalidatePath("/admin/auction");
+    revalidatePath("/my-team");
+
+    return { ok: true, message: `Successfully updated budget to all ${result.count} teams!` };
   });
 }

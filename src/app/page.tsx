@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Avatar } from "@/components/ui/Avatar";
-import { formatMoney, tierFromBasePrice } from "@/lib/validators";
+import { formatM, tierFromBasePrice } from "@/lib/validators";
 import { Badge } from "@/components/ui/Badge";
 
 export const dynamic = "force-dynamic";
@@ -100,7 +100,7 @@ export default async function HomePage() {
                   <span className="text-slate-200">{s.player.user.name}</span>
                   <span className="text-slate-500">→</span>
                   <span style={{ color: s.team.primaryColor }} className="font-medium">{s.team.name}</span>
-                  <span className="text-gold-400 font-display">{formatMoney(s.soldPrice)}</span>
+                  <span className="text-gold-400 font-display">{formatM(s.soldPrice)}</span>
                 </span>
               ))}
             </div>
@@ -136,7 +136,7 @@ export default async function HomePage() {
                     </div>
                     <p className="mt-3 font-medium truncate w-full group-hover:text-brand-300">{p.user.name}</p>
                     <p className="text-xs text-slate-400">{p.sport === "CRICKET" ? "🏏" : "⚽"} {p.team?.name ?? "—"}</p>
-                    <p className="mt-2 text-xl font-display text-gold-400">{p.soldPrice ? formatMoney(p.soldPrice) : "—"}</p>
+                    <p className="mt-2 text-xl font-display text-gold-400">{p.soldPrice ? formatM(p.soldPrice) : "—"}</p>
                   </div>
                 </div>
               </Link>

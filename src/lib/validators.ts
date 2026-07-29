@@ -53,20 +53,44 @@ export function date(v: FormDataEntryValue | null, required = false): Date | nul
   return d;
 }
 
-export function formatMoney(n: number) {
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+export function formatMoney(n: number | bigint) {
+  const num = Number(n);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(num);
 }
 
-/** Compact millions display, e.g. 5_000_000 → "₹5M", 24_900_000 → "₹24.9M", 450_000 → "₹0.45M". */
-export function formatM(n: number) {
-  const sign = n < 0 ? "-" : "";
-  const m = Math.abs(n) / 1_000_000;
+/** Compact millions/billions display, e.g. 100_000_000 → "$100M", 1_000_000_000 → "$1B", 10_000_000_000 → "$10B". */
+export function formatM(n: number | bigint) {
+  const num = Number(n);
+  const sign = num < 0 ? "-" : "";
+  const abs = Math.abs(num);
+  if (abs >= 1_000_000_000) {
+    const b = abs / 1_000_000_000;
+    const s = b.toFixed(2).replace(/\.?0+$/, "");
+    return `${sign}$${s}B`;
+  }
+  const m = abs / 1_000_000;
   const s = m.toFixed(2).replace(/\.?0+$/, ""); // trim trailing zeros ("5.00"→"5", "24.90"→"24.9")
-  return `${sign}₹${s}M`;
+  return `${sign}$${s}M`;
 }
 
-export function tierFromBasePrice(base: number): "A" | "B" | "C" {
-  if (base >= 500_000) return "A";
-  if (base >= 200_000) return "B";
+/** Full Million/Billion word display, e.g. 100_000_000 → "$100.00 Million", 1_000_000_000 → "$1.00 Billion". */
+export function formatMillion(n: number | bigint) {
+  const num = Number(n);
+  const sign = num < 0 ? "-" : "";
+  const abs = Math.abs(num);
+  if (abs >= 1_000_000_000) {
+    const b = abs / 1_000_000_000;
+    const s = b.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    return `${sign}$${s} Billion`;
+  }
+  const m = abs / 1_000_000;
+  const s = m.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  return `${sign}$${s} Million`;
+}
+
+export function tierFromBasePrice(base: number | bigint): "A" | "B" | "C" {
+  const num = Number(base);
+  if (num >= 500_000) return "A";
+  if (num >= 200_000) return "B";
   return "C";
 }

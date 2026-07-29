@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { StatusBadge } from "@/components/player/StatusBadge";
-import { formatMoney, tierFromBasePrice } from "@/lib/validators";
+import { formatM, tierFromBasePrice } from "@/lib/validators";
 
 export const dynamic = "force-dynamic";
 
@@ -35,9 +35,10 @@ export default async function PlayerDetail({ params }: { params: Promise<{ id: s
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <StatusBadge status={p.status as any} />
-              {p.basePrice > 0 && <Badge tone="gold">Tier {tierFromBasePrice(p.basePrice)} · {formatMoney(p.basePrice)}</Badge>}
+              {p.session && <Badge tone="neutral">Session {p.session}</Badge>}
+              {p.basePrice > 0 && <Badge tone="gold">Tier {tierFromBasePrice(p.basePrice)} · {formatM(p.basePrice)}</Badge>}
               {p.team && <Link href={`/teams/${p.team.id}`}><Badge tone="brand">{p.team.name}</Badge></Link>}
-              {p.soldPrice && <Badge tone="neutral">Sold {formatMoney(p.soldPrice)}</Badge>}
+              {p.soldPrice && <Badge tone="neutral">Sold {formatM(p.soldPrice)}</Badge>}
             </div>
           </div>
         </div>

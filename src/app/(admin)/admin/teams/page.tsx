@@ -5,7 +5,8 @@ import { TeamCard } from "@/components/team/TeamCard";
 import { CreateTeamForm } from "@/components/team/CreateTeamForm";
 import { DeleteTeamButton } from "@/components/team/DeleteTeamButton";
 import { EditTeamButton } from "@/components/team/EditTeamButton";
-import { formatMoney } from "@/lib/validators";
+import { BulkBudgetForm } from "@/components/team/BulkBudgetForm";
+import { formatM, formatMoney } from "@/lib/validators";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ export default async function AdminTeamsPage() {
         <div>
           <p className="label">Tournament Management</p>
           <h1 className="text-3xl sm:text-4xl heading-gradient">Teams</h1>
-          <p className="text-sm text-slate-400 mt-1">Create franchises, assign owners, and manage the auction budget.</p>
+          <p className="text-sm text-slate-400 mt-1">Create franchises, assign owners, and manage the auction budget in Millions/Billions.</p>
         </div>
         <div className="flex gap-2 text-xs">
           <Link href="/admin/auction" className="btn-ghost">🔨 Run Auction</Link>
@@ -50,8 +51,11 @@ export default async function AdminTeamsPage() {
         <StatBox label="Teams" value={teams.length} icon="🛡️" />
         <StatBox label="🏏 Cricket" value={cricketTeams.length} />
         <StatBox label="⚽ Football" value={footballTeams.length} />
-        <StatBox label="Pool" value={formatMoney(totalBudget._sum.budget ?? 0)} icon="💰" small />
+        <StatBox label="Pool Budget" value={formatM(totalBudget._sum.budget ?? 0)} icon="💰" small subtitle={formatMoney(totalBudget._sum.budget ?? 0)} />
       </section>
+
+      {/* BULK UNIFORM BUDGET SETTER (1-CLICK) */}
+      <BulkBudgetForm teamCount={teams.length} />
 
       {/* CREATE FORM */}
       <Card>
@@ -61,7 +65,7 @@ export default async function AdminTeamsPage() {
           </span>
           <div>
             <h2 className="text-xl">Create New Team</h2>
-            <p className="text-xs text-slate-400">Set up a franchise, pick a colour, assign an owner.</p>
+            <p className="text-xs text-slate-400">Set up a franchise, pick a colour, set auction budget in Millions.</p>
           </div>
         </div>
         <CreateTeamForm ownerCandidates={ownerCandidates} />
@@ -72,9 +76,14 @@ export default async function AdminTeamsPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-2xl">All Teams <span className="text-slate-500 text-base">({teams.length})</span></h2>
           {teams.length > 0 && (
-            <p className="text-xs text-slate-400">
-              {formatMoney(totalSpent._sum.spent ?? 0)} spent of {formatMoney(totalBudget._sum.budget ?? 0)}
-            </p>
+            <div className="text-right">
+              <p className="text-sm font-semibold text-slate-200">
+                <span className="text-brand-300">{formatM(totalSpent._sum.spent ?? 0)}</span> spent of <span className="text-gold-400">{formatM(totalBudget._sum.budget ?? 0)}</span>
+              </p>
+              <p className="text-[11px] text-slate-400">
+                {formatMoney(totalSpent._sum.spent ?? 0)} total budget pool
+              </p>
+            </div>
           )}
         </div>
 
@@ -97,12 +106,7 @@ export default async function AdminTeamsPage() {
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <span title={`${matchCount} match${matchCount === 1 ? "" : "es"}`} className="text-slate-500">{matchCount} ⚔</span>
-                      <EditTeamButton
-                        teamId={t.id}
-                        name={t.name}
-                        budget={t.budget}
-                        spent={t.spent}
-                      />
+                      <EditTeamButton team={t} />
                       <DeleteTeamButton
                         teamId={t.id}
                         teamName={t.name}
@@ -121,7 +125,7 @@ export default async function AdminTeamsPage() {
   );
 }
 
-function StatBox({ label, value, icon, small }: { label: string; value: number | string; icon?: string; small?: boolean }) {
+function StatBox({ label, value, icon, small, subtitle }: { label: string; value: number | string; icon?: string; small?: boolean; subtitle?: string }) {
   return (
     <div className="card">
       <div className="flex items-start justify-between">
@@ -129,6 +133,7 @@ function StatBox({ label, value, icon, small }: { label: string; value: number |
         {icon && <span className="text-base sm:text-lg opacity-60">{icon}</span>}
       </div>
       <p className={`mt-1 sm:mt-2 font-display ${small ? "text-xl sm:text-2xl text-gold-400" : "text-3xl sm:text-4xl text-white"}`}>{value}</p>
+      {subtitle && <p className="text-[11px] text-slate-400 mt-0.5">{subtitle}</p>}
     </div>
   );
 }

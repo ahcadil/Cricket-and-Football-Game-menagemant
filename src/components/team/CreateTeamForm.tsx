@@ -5,6 +5,7 @@ import { Field, Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { createTeamAction } from "@/server/actions/team";
 import type { ActionState } from "@/lib/action";
+import { formatM, formatMillion } from "@/lib/validators";
 
 interface OwnerOption { id: string; name: string; email: string }
 interface Props { ownerCandidates: OwnerOption[] }
@@ -20,6 +21,7 @@ export function CreateTeamForm({ ownerCandidates }: Props) {
   const [name, setName] = useState("");
   const [color, setColor] = useState("#1aae72");
   const [sport, setSport] = useState<"CRICKET" | "FOOTBALL">("CRICKET");
+  const [budgetValue, setBudgetValue] = useState<number>(50000000);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Reset form once after a successful save (effect — not inline — to avoid infinite re-render)
@@ -29,6 +31,7 @@ export function CreateTeamForm({ ownerCandidates }: Props) {
       setName("");
       setColor("#1aae72");
       setSport("CRICKET");
+      setBudgetValue(50000000);
       if (ownerCandidates.length > 0) setOwnerMode("existing");
     }
   }, [state, ownerCandidates.length]);
@@ -51,7 +54,9 @@ export function CreateTeamForm({ ownerCandidates }: Props) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-lg truncate">{name || "Your team name"}</p>
-            <p className="text-xs text-slate-400">{sport === "CRICKET" ? "🏏 Cricket" : "⚽ Football"}</p>
+            <p className="text-xs text-slate-400">
+              {sport === "CRICKET" ? "🏏 Cricket" : "⚽ Football"} · <span className="text-gold-400 font-medium">Budget: {formatM(budgetValue)} ({formatMillion(budgetValue)})</span>
+            </p>
           </div>
         </div>
       </div>
@@ -81,25 +86,57 @@ export function CreateTeamForm({ ownerCandidates }: Props) {
         </Field>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
-        <Field label="Auction Budget (₹)" hint="Cap on what they can spend">
-          <Input name="budget" type="number" min={0} step={100000} defaultValue={5000000} required />
-        </Field>
-        <Field label="Primary Color">
-          <div className="flex gap-2">
-            <input
-              name="primaryColor"
-              type="color"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              className="w-12 h-[42px] rounded-lg ring-1 ring-white/10 bg-black/30 cursor-pointer"
+      <div className="space-y-2">
+        <div className="grid md:grid-cols-3 gap-4">
+          <Field
+            label="Auction Budget ($)"
+            hint={`= ${formatM(budgetValue)} (${formatMillion(budgetValue)})`}
+          >
+            <Input
+              name="budget"
+              type="number"
+              min={0}
+              step={100000}
+              value={budgetValue}
+              onChange={(e) => setBudgetValue(Number(e.target.value) || 0)}
+              required
             />
-            <Input value={color} onChange={(e) => setColor(e.target.value)} className="flex-1" />
-          </div>
-        </Field>
-        <Field label="Logo URL" hint="Optional — paste image URL">
-          <Input name="logoUrl" placeholder="https://…" />
-        </Field>
+          </Field>
+          <Field label="Primary Color">
+            <div className="flex gap-2">
+              <input
+                name="primaryColor"
+                type="color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="w-12 h-[42px] rounded-lg ring-1 ring-white/10 bg-black/30 cursor-pointer"
+              />
+              <Input value={color} onChange={(e) => setColor(e.target.value)} className="flex-1" />
+            </div>
+          </Field>
+          <Field label="Logo URL" hint="Optional — paste image URL">
+            <Input name="logoUrl" placeholder="https://…" />
+          </Field>
+        </div>
+        
+        {/* Million Preset Quick Buttons */}
+        <div className="flex items-center gap-2 pt-1 flex-wrap">
+          <span className="text-xs text-slate-400 font-medium">Quick Millions:</span>
+          {[5_000_000, 10_000_000, 25_000_000, 50_000_000, 100_000_000].map((amt) => (
+            <button
+              key={amt}
+              type="button"
+              onClick={() => setBudgetValue(amt)}
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition ring-1 ${
+                budgetValue === amt
+                  ? "bg-gold-500/20 text-gold-300 ring-gold-400/50"
+                  : "bg-black/30 text-slate-300 ring-white/10 hover:ring-white/30"
+              }`}
+            >
+              {formatM(amt)}
+            </button>
+          ))}
+        </div>
       </div>
 
       <Field label="Tagline" hint="Optional, max 120 characters">

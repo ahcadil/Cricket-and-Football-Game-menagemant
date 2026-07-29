@@ -4,9 +4,13 @@ import bcrypt from "bcryptjs";
 import type { Role } from "./enums";
 import { prisma } from "./db";
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? "dev-secret-change-me-32chars-minimum-please-please"
-);
+const RAW_SECRET = process.env.JWT_SECRET;
+if (!RAW_SECRET || RAW_SECRET.length < 32) {
+  throw new Error(
+    "JWT_SECRET is missing or too short (need ≥32 chars). Set it in .env — refusing to start with an insecure fallback."
+  );
+}
+const SECRET = new TextEncoder().encode(RAW_SECRET);
 const COOKIE_NAME = "arenacast_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 

@@ -37,6 +37,7 @@ function Table({ rows, sport }: { rows: StandingRow[]; sport: "CRICKET" | "FOOTB
                 <>
                   <th className="text-right py-2 px-1">RF</th>
                   <th className="text-right py-2 px-1">RA</th>
+                  <th className="text-right py-2 px-1">NRR</th>
                 </>
               ) : (
                 <>
@@ -71,6 +72,9 @@ function Table({ rows, sport }: { rows: StandingRow[]; sport: "CRICKET" | "FOOTB
                   <>
                     <td className="py-3 px-1 text-right">{r.runsFor}</td>
                     <td className="py-3 px-1 text-right">{r.runsAgainst}</td>
+                    <td className={`py-3 px-1 text-right ${(r.nrr ?? 0) >= 0 ? "text-brand-300" : "text-red-300"}`}>
+                      {(r.nrr ?? 0) > 0 ? "+" : ""}{(r.nrr ?? 0).toFixed(2)}
+                    </td>
                   </>
                 ) : (
                   <>

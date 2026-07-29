@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Event {
   id: string; minute: number; type: string; teamId: string; note: string | null;
@@ -13,14 +14,20 @@ interface MatchSlim {
 }
 
 export function FootballScoreboard({ match, events }: { match: MatchSlim; events: Event[] }) {
-  const [bump, setBump] = useState(0);
+  const router = useRouter();
+  const [flash, setFlash] = useState(false);
+
+  // Soft in-place refresh on each SSE tick — no full-page reload.
   useEffect(() => {
     if (match.status !== "LIVE") return;
     const es = new EventSource(`/api/matches/${match.id}/stream`);
-    es.onmessage = () => setBump(b => b + 1);
+    es.onmessage = () => {
+      setFlash(true);
+      setTimeout(() => setFlash(false), 700);
+      router.refresh();
+    };
     return () => es.close();
-  }, [match.id, match.status]);
-  useEffect(() => { if (bump > 0) window.location.reload(); }, [bump]);
+  }, [match.id, match.status, router]);
 
   // compute score
   const aGoals = events.filter(e => e.type === "GOAL" && e.teamId === match.teamA.id).length
@@ -32,6 +39,12 @@ export function FootballScoreboard({ match, events }: { match: MatchSlim; events
 
   return (
     <div className="space-y-4">
+      {match.status === "LIVE" && (
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <span className="live-dot" /> Live
+          <span className={`transition-opacity duration-300 ${flash ? "opacity-100 text-brand-300" : "opacity-0"}`}>· updated</span>
+        </div>
+      )}
       <div className="card !p-5 sm:!p-8">
         <div className="grid grid-cols-3 items-center gap-2 sm:gap-4">
           <div className="text-right min-w-0">

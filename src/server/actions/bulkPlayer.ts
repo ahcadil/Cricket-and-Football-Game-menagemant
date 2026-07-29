@@ -101,6 +101,8 @@ export async function bulkImportPlayersAction(
               city: row.city,
               phone: row.phone,
               bio: row.bio,
+              photoUrl: row.photoUrl,
+              session: row.session,
               experienceYears: row.experienceYears,
               cricketRole: row.sport === "CRICKET" ? row.role : null,
               footballPosition: row.sport === "FOOTBALL" ? row.role : null,

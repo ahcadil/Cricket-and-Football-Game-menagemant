@@ -20,6 +20,16 @@
     input, select, textarea, button { font-size: 14px; }
   }
 
+  select option {
+    background-color: #0d131f;
+    color: #f1f5f9;
+    padding: 8px;
+  }
+  select option:disabled {
+    color: #64748b;
+    background-color: #080c14;
+  }
+
   ::selection { background: rgba(245,197,66,0.35); color: #fff; }
 }
 
@@ -121,6 +131,16 @@
     background-image: linear-gradient(135deg, #fb7185, #ef4444);
     box-shadow: 0 0 36px -8px rgba(239,68,68,0.5);
   }
+}
+
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-rise {
+  animation: riseIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
 
 @keyframes bidFlash {

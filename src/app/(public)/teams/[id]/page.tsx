@@ -42,7 +42,7 @@ export default async function TeamDetail({ params }: { params: Promise<{ id: str
           </div>
           <div className="w-full md:w-72">
             <p className="label">Budget</p>
-            <BudgetBar budget={team.budget} spent={team.spent} />
+            <BudgetBar budget={team.budget} spent={team.spent} squadCount={team.players.length} />
           </div>
         </div>
       </header>

@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/Card";
 
 export const dynamic = "force-dynamic";
 
-interface Search { sport?: string; role?: string; q?: string; status?: string }
+interface Search { sport?: string; role?: string; q?: string; status?: string; session?: string }
 
 export default async function PublicPlayersPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
@@ -17,6 +17,7 @@ export default async function PublicPlayersPage({ searchParams }: { searchParams
       : { in: ["APPROVED", "ON_AUCTION", "SOLD", "UNSOLD"] },
   };
   if (sp.sport === "CRICKET" || sp.sport === "FOOTBALL") where.sport = sp.sport;
+  if (sp.session) where.session = sp.session;
   if (sp.role) {
     if (sp.sport === "FOOTBALL") where.footballPosition = sp.role as never;
     else where.cricketRole = sp.role as never;
@@ -34,7 +35,7 @@ export default async function PublicPlayersPage({ searchParams }: { searchParams
     <div className="space-y-6">
       <h1 className="text-4xl">Players</h1>
       <Card>
-        <form className="grid md:grid-cols-4 gap-3" action="/players" method="GET">
+        <form className="grid md:grid-cols-5 gap-3" action="/players" method="GET">
           <div>
             <label className="label">Search</label>
             <input name="q" defaultValue={sp.q ?? ""} placeholder="name…" className="input" />
@@ -45,6 +46,17 @@ export default async function PublicPlayersPage({ searchParams }: { searchParams
               <option value="">All</option>
               <option value="CRICKET">Cricket</option>
               <option value="FOOTBALL">Football</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">Session</label>
+            <select name="session" defaultValue={sp.session ?? ""} className="input">
+              <option value="">All Sessions</option>
+              <option value="24-25">24-25</option>
+              <option value="23-24">23-24</option>
+              <option value="22-23">22-23</option>
+              <option value="25-26">25-26</option>
+              <option value="21-22">21-22</option>
             </select>
           </div>
           <div>
@@ -75,7 +87,7 @@ export default async function PublicPlayersPage({ searchParams }: { searchParams
               <option value="UNSOLD">Unsold</option>
             </select>
           </div>
-          <div className="md:col-span-4 flex gap-2">
+          <div className="md:col-span-5 flex gap-2">
             <button className="btn-primary">Filter</button>
             <Link href="/players" className="btn-ghost">Reset</Link>
           </div>

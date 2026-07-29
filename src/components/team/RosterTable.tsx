@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
-import { formatMoney } from "@/lib/validators";
+import { formatM } from "@/lib/validators";
 import type { PlayerProfile, User } from "@prisma/client";
 
 type Row = PlayerProfile & { user: Pick<User, "name"> };
@@ -32,7 +32,7 @@ export function RosterTable({ players, sport }: { players: Row[]; sport: string 
               </td>
               <td className="py-3"><Badge tone="slate">{sport === "CRICKET" ? p.cricketRole ?? "—" : p.footballPosition ?? "—"}</Badge></td>
               <td className="py-3 hidden md:table-cell text-slate-400">{p.city ?? "—"}</td>
-              <td className="py-3 text-right text-gold-400">{p.soldPrice ? formatMoney(p.soldPrice) : "—"}</td>
+              <td className="py-3 text-right text-gold-400">{p.soldPrice ? formatM(p.soldPrice) : "—"}</td>
             </tr>
           ))}
         </tbody>

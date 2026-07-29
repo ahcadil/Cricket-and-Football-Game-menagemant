@@ -34,15 +34,15 @@ export async function addCricketBallAction(formData: FormData) {
 
   const legalBall = !extraType || extraType === "BYE" || extraType === "LEGBYE";
   const newBallsBowled = innings.ballsBowled + (legalBall ? 1 : 0);
-  const over = Math.floor(newBallsBowled / 6);
-  const ballInOver = newBallsBowled % 6 || 6;
+  const over = Math.floor(innings.ballsBowled / 6);
+  const ballInOver = (innings.ballsBowled % 6) + 1;
   const totalRuns = innings.runs + runs + (extraType === "WIDE" || extraType === "NOBALL" ? 1 : 0);
 
   const event = await prisma.cricketEvent.create({
     data: {
       matchId, inningsId: innings.id,
-      over: legalBall ? over : Math.floor(innings.ballsBowled / 6),
-      ball: legalBall ? ballInOver : 0,
+      over,
+      ball: ballInOver,
       batsmanId, bowlerId, runs, isWicket,
       wicketType: wicketType as never, extraType: extraType as never, note,
     },

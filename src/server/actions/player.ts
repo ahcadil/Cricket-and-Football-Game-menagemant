@@ -21,6 +21,7 @@ export async function saveProfileAction(formData: FormData) {
     sport,
     city: optStr(formData.get("city")),
     phone: optStr(formData.get("phone")),
+    session: optStr(formData.get("session")) || "24-25",
     dob: date(formData.get("dob")),
     experienceYears: int(formData.get("experienceYears")) ?? 0,
     heightCm: int(formData.get("heightCm"), { min: 100, max: 250 }),

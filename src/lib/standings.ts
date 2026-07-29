@@ -13,6 +13,9 @@ export interface StandingRow {
   // cricket
   runsFor?: number;
   runsAgainst?: number;
+  ballsFor?: number;
+  ballsAgainst?: number;
+  nrr?: number; // net run rate — the real cricket tiebreak
   // football
   goalsFor?: number;
   goalsAgainst?: number;
@@ -37,7 +40,7 @@ export async function getStandings(sport: Sport): Promise<StandingRow[]> {
       primaryColor: t.primaryColor,
       played: 0, won: 0, lost: 0, tied: 0, points: 0,
       ...(sport === "CRICKET"
-        ? { runsFor: 0, runsAgainst: 0 }
+        ? { runsFor: 0, runsAgainst: 0, ballsFor: 0, ballsAgainst: 0, nrr: 0 }
         : { goalsFor: 0, goalsAgainst: 0, diff: 0 }),
     });
   }
@@ -49,10 +52,16 @@ export async function getStandings(sport: Sport): Promise<StandingRow[]> {
     a.played++; b.played++;
 
     if (sport === "CRICKET") {
-      const aRuns = m.innings.filter(i => i.battingTeamId === m.teamAId).reduce((s, i) => s + i.runs, 0);
-      const bRuns = m.innings.filter(i => i.battingTeamId === m.teamBId).reduce((s, i) => s + i.runs, 0);
+      const aInns = m.innings.filter(i => i.battingTeamId === m.teamAId);
+      const bInns = m.innings.filter(i => i.battingTeamId === m.teamBId);
+      const aRuns = aInns.reduce((s, i) => s + i.runs, 0);
+      const bRuns = bInns.reduce((s, i) => s + i.runs, 0);
+      const aBalls = aInns.reduce((s, i) => s + i.ballsBowled, 0);
+      const bBalls = bInns.reduce((s, i) => s + i.ballsBowled, 0);
       a.runsFor! += aRuns; a.runsAgainst! += bRuns;
       b.runsFor! += bRuns; b.runsAgainst! += aRuns;
+      a.ballsFor! += aBalls; a.ballsAgainst! += bBalls;
+      b.ballsFor! += bBalls; b.ballsAgainst! += aBalls;
     } else {
       const aGoals = m.footballEvents.filter(e => e.type === "GOAL" && e.teamId === m.teamAId).length
                    + m.footballEvents.filter(e => e.type === "OWN_GOAL" && e.teamId === m.teamBId).length;
@@ -74,9 +83,22 @@ export async function getStandings(sport: Sport): Promise<StandingRow[]> {
     }
   }
 
+  // Net Run Rate = (runsFor / oversFaced) − (runsAgainst / oversBowled)
+  if (sport === "CRICKET") {
+    for (const r of rows.values()) {
+      const oversFor = (r.ballsFor ?? 0) / 6;
+      const oversAgainst = (r.ballsAgainst ?? 0) / 6;
+      const rateFor = oversFor > 0 ? (r.runsFor ?? 0) / oversFor : 0;
+      const rateAgainst = oversAgainst > 0 ? (r.runsAgainst ?? 0) / oversAgainst : 0;
+      r.nrr = Number((rateFor - rateAgainst).toFixed(3));
+    }
+  }
+
   return [...rows.values()].sort((x, y) => {
     if (y.points !== x.points) return y.points - x.points;
     if (sport === "FOOTBALL") return (y.diff ?? 0) - (x.diff ?? 0);
+    // cricket: tie-break by NRR, then total runs
+    if ((y.nrr ?? 0) !== (x.nrr ?? 0)) return (y.nrr ?? 0) - (x.nrr ?? 0);
     return (y.runsFor ?? 0) - (x.runsFor ?? 0);
   });
 }
